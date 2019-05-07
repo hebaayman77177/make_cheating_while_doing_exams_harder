@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+    <script>
+
+    $(document).ready(function(){
+
+        var socket = io.connect('http://localhost:5000');
+
+        var qvgaConstraints = {
+            video: {
+                width: { max: 240 },
+                height: { max: 120 }
+            }
+        };
+        
+        var video = document.getElementsByTagName('video')[0];
+
+        navigator.mediaDevices.getUserMedia(qvgaConstraints)
+        .then((stream) => {
+            var video = document.querySelector('video');
+            video.srcObject = stream;
+            // video.play();
+            }).catch((error) => {
+            console.log('navigator.getUserMedia error: ', error);
+            });       
+
+        var back = document.createElement('canvas');
+        var backcontext = back.getContext('2d');
+        var currentDiv = document.getElementById("sourcevid"); 
+         document.body.insertBefore(back, currentDiv); 
+        var ws;
+
+        cw = 240;//240;//video.clientWidth;
+        ch = 120;//400;//video.clientHeight;
+        back.width = cw;
+        back.height = ch;
+        var t1=1;
+        draw(video, backcontext, cw, ch);
+
+        var imgd ,pix ;
+        function draw(v,bc,w,h) {
+            // First, draw it into the backing canvas
+            bc.drawImage(v, 0, 0);
+            
+
+            imgd = bc.getImageData(0, 0, w, h);
+            // bc.putImageData(imgd, w, h);
+            pix = imgd.data;
+            var normalpix = Array.from(pix);
+                
+                socket.emit('video', {  
+                'data': normalpix,
+                'w':w,
+                'h':h
+                    });
+             
+
+            setTimeout(function(){ draw(v, bc, w, h); });
+        }
+        // sending a connect request to the server.
+        // socket.emit('video', {  
+        //     data: "the frame should be this"
+        // });
+    socket.on('after connect', function(msg){
+        console.log('After connect', msg);
+        });
+    socket.on('result', function(msg){
+    console.log( msg);
+    });
+    });
+    </script>
+</head>
+<body>
+    <video autoplay id="sourcevid"></video>
+    hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+    <!-- <script src="{{url_for('static', filename='js2.js')}}"></script> -->
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+    <script>
+
+    $(document).ready(function(){
+
+
+        var socket = io.connect('http://localhost:5000');
+
+        var options = {mimeType: 'video/webm; codecs=vp9'};
+        
+
+
+        function handleDataAvailable(event) {
+            if (event.data && event.data.size > 0) {
+                recordedBlobs.push(event.data);
+            }
+            }
+        function startRecording() {
+            recordedBlobs = [];
+                
+            try {
+                mediaRecorder = new MediaRecorder(window.stream , options);
+               
+            } catch (e) {
+                console.error('Exception while creating MediaRecorder hhhh: ' + e);
+                return;
+            }
+            console.log('Created MediaRecorder', mediaRecorder);
+            mediaRecorder.ondataavailable = handleDataAvailable;
+            mediaRecorder.start(10); // collect 10ms of data
+            console.log('MediaRecorder started', mediaRecorder);
+        }
+                
+        function stopRecording() {
+            mediaRecorder.stop();
+            }
+
+        var i=0
+        function download() {
+            var blob = new Blob(recordedBlobs, {type: 'video/webm'});
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'hardcheat'+i+'.webm';
+            i+=1
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+            }
+
+
+        var qvgaConstraints = {
+            video: {
+                width: { max: 480 },
+                height: { max: 240 }
+            }
+        };
+        
+        var video = document.getElementsByTagName('video')[0];
+
+        navigator.mediaDevices.getUserMedia(qvgaConstraints)
+        .then((stream) => {
+            window.stream = stream;
+            video.srcObject = stream;
+            startRecording();
+            
+            
+            }).catch((error) => {
+            console.log('navigator.getUserMedia error: ', error);
+            }); 
+
+            
+
+        function checkPerson(){
+            download();
+            stopRecording();
+            setTimeout(()=>startRecording(),10000);
+            console.log("bshould emit");
+            setTimeout(function(){socket.emit('video', {"url":'hardcheat'+(i-1)+'.webm'});},10000);
+            console.log("should emit");
+        }
+
+        
+
+
+        socket.on('alert', function(msg){
+        alert(msg['msg']);
+        });
+
+        startRecording();
+        window.setInterval(checkPerson,30000);      
+
+
+    });
+ 
+    </script>
+</head>
+<body>
+    <video autoplay id="sourcevid"></video>
+    hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+    <!-- <script src="{{url_for('static', filename='js2.js')}}"></script> -->
+</body>
+</html>
